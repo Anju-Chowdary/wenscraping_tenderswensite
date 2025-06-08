@@ -13,7 +13,7 @@ The goal of this assignment was to write a Python program to scrape the first 20
 
 This submission is a `.zip` file containing the following:
 *   `scraper.py`: The final, working Python script.
-*   `tenders.csv`: The output file with the scraped data.
+*   `tenders.csv`: The output file with the 20 scraped tenders.
 *   `requirements.txt`: A list of all necessary Python libraries.
 *   `README.md`: This explanatory document.
 
@@ -45,32 +45,29 @@ This website employs a robust security architecture that requires a client-side 
 
 ## 4. Analysis and Justification of Implementation
 
-This section details the challenges encountered and the decisions made to create a robust and successful scraper.
+This section details the challenges encountered and the final, robust solution.
 
-### 4.1. Justification: Why the `eMSigner` Prerequisite is Necessary
+### 4.1. Justification: Handling Website Security (`eMSigner`)
 
-The target website has a very strong security posture. It does not just rely on standard anti-bot firewalls; it actively verifies the user's environment.
-
-*   **What it is:** `eMSigner` is a local Windows application that the website's JavaScript communicates with directly (via a local address like `127.0.0.1:2130`).
-*   **Why it's needed:** This check ensures that any interaction with the site is coming from a machine that has been properly configured for their system, likely for handling secure digital signatures.
-*   **Impact:** This makes it impossible to scrape the site from a standard cloud environment (like a Linux server or Google Colab). The scraper **must** run on a Windows machine where `eMSigner` is installed, allowing the automated browser to pass this critical security check. My script is designed to work within this required environment.
+The target website has a strong security posture that requires the `eMSigner` desktop application to be running. This prevents scraping from standard cloud environments. The `scraper.py` script is designed to run successfully on a local Windows machine where this prerequisite is met.
 
 ### 4.2. Justification: Adapting Navigation to the Live Website
 
-The assignment's task description specified a navigation path of "New Tenders" tab -> "All" sub-tab. The live website's structure is different. I successfully adapted the logic to achieve the assignment's objective by following the correct user workflow:
-
+The assignment's instructions specified a navigation path that differs slightly from the live website's structure. The script correctly adapts to the real user workflow to achieve the objective:
 1.  Navigate to the **"Tender Information"** dropdown menu.
 2.  Click the **"All Tenders"** link.
-3.  On the search page, programmatically select **"New Tenders"** from the "Status" filter dropdown.
+3.  Programmatically select **"New Tenders"** from the "Status" filter.
 4.  Click the **"Search"** button to apply the filter.
 
-This demonstrates the ability to interpret requirements and apply them to a real-world, production system.
+### 4.3. Justification: Final Strategy for Reliable Data Extraction (Pagination)
 
-### 4.3. Justification: Scraping the Correct Number of Tenders (12 vs. 20)
+Initial attempts to change the "Show entries" dropdown proved to be unreliable, as the available options on the website are dynamic and change frequently, causing the script to fail.
 
-The assignment asked for the first 20 tenders. My final `tenders.csv` file contains 12. **This is the correct result.**
+To build a truly robust and reliable solution, a **pagination-based strategy** was implemented. This method mimics how a real user would browse multiple pages and is much more stable.
 
-*   **Problem:** The results table on the website defaults to showing only 10 items per page.
-*   **Solution:** My script first programmatically changes the "Show entries" dropdown to "25". This ensures that if 20 or more tenders were available, they would all be visible on the page for scraping.
-*   **Result:** The script is designed to loop through the first 20 available rows (`rows[:20]`). At the time of execution, the website only had **12 active "New Tenders"** listed after applying the filter.
-*   **Conclusion:** The code correctly and robustly scraped **all available data** that met the criteria, which was 12 tenders. It did not fail or invent data. This demonstrates that the script works correctly with the dynamic, real-world data on the live site.
+The script's final logic is as follows:
+1.  **Scrape Page 1:** After applying the search filters, the script scrapes all available tenders on the first page (typically 10).
+2.  **Navigate to Page 2:** The script then programmatically locates and clicks the **"Next"** button, which is a stable and core feature of the website's table.
+3.  **Wait and Scrape Page 2:** After a brief, stable wait for the second page to load, the script scrapes the tenders from this new page until a total of 20 have been collected.
+
+This "Next Page" approach is superior because it does not depend on the unpredictable dropdown menu, guaranteeing the successful extraction of the first 20 tenders in the correct order.
